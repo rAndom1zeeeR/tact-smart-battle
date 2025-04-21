@@ -32,8 +32,8 @@ struct ProposalState {
     master: Address;
     proposalId: Int as uint32;
     votingEndingAt: Int as uint32;
-    yesCount: Int as uint8;
-    noCount: Int as uint8;
+    yesCount: Int as uint32;
+    noCount: Int as uint32;
 }
 
 const MIN_TON_FOR_STORAGE: Int = ton("0.01");
@@ -76,42 +76,23 @@ contract ProposalMaster {
     /// @param msg DeployNewProposal message containing voting end time
     /// @dev Throws 101 if voting end time is invalid
     receive(msg: DeployNewProposal) {
-        let now = now();
-        if (msg.votingEndingAt <= now) {
-            throw(101); // Invalid voting end time
-        }
+        let currentTime: Int = now();
+        require(currentTime < msg.votingEndingAt, "Voting end time must be in the future");
         
-        let id = self.nextProposalId;
-        let master = myAddress();
-        let ctx = context();
+        let proposalInit: ProposalInit = ProposalInit{
+            master: myAddress(),
+            proposalId: self.nextProposalId
+        };
         
-        // Check if we have enough TON for deployment
-        if (ctx.value < GAS_FOR_DEPLOY) {
-            throw(102); // Not enough TON for deployment
-        }
-        
-        // Deploy the new proposal contract using the deploy() function
         deploy(DeployParameters{
-            init: initOf Proposal(ProposalInit{
-                master: master,
-                proposalId: id
-            }),
-            value: GAS_FOR_DEPLOY,
-            bounce: true
+            value: 0,
+            mode: SendRemainingValue,
+            bounce: true,
+            body: beginCell().storeUint(msg.votingEndingAt, 32).endCell(),
+            init: initOf Proposal(proposalInit)
         });
         
-        self.nextProposalId = id + 1;
-        
-        // Refund any excess
-        let refund = ctx.value - GAS_FOR_DEPLOY;
-        if (refund > 0) {
-            send(SendParameters{
-                to: sender(),
-                value: refund,
-                mode: SendRemainingValue,
-                bounce: false
-            });
-        }
+        self.nextProposalId += 1;
     }
 
     /// @notice Returns the next available proposal ID
@@ -129,22 +110,32 @@ contract Proposal {
     master: Address;
     proposalId: Int as uint32;
     votingEndingAt: Int as uint32;
-    yesCount: Int as uint8;
-    noCount: Int as uint8;
+    yesCount: Int as uint32;
+    noCount: Int as uint32;
     voters: map<Address, Bool>;
-    totalVotes: Int as uint8;
+    totalVotes: Int as uint32;
     
-    init(init: ProposalInit) {
-        self.master = init.master;
-        self.proposalId = init.proposalId;
-        
-        // Set default voting end time
-        self.votingEndingAt = now() + DEFAULT_VOTING_PERIOD;
-        
+    init(data: ProposalInit) {
+        self.master = data.master;
+        self.proposalId = data.proposalId;
+        self.votingEndingAt = now() + 86400; // 24 hours from now
         self.yesCount = 0;
         self.noCount = 0;
         self.voters = emptyMap();
         self.totalVotes = 0;
+    }
+
+    /// @notice Handles the initial message to set voting end time
+    /// @dev Only the master can set the voting end time
+    receive(msg: Slice) {
+        if (sender() != self.master) {
+            throw(201);
+        }
+        
+        self.votingEndingAt = msg.loadUint(32);
+        
+        let currentTime: Int = now();
+        require(currentTime < self.votingEndingAt, "Voting end time must be in the future");
     }
 
     /// @notice Handles incoming votes
@@ -154,44 +145,20 @@ contract Proposal {
     ///       103 if max votes reached
     ///       104 if address has already voted
     receive(msg: Vote) {
-        let sender = sender();
-        let now = now();
-        if (now >= self.votingEndingAt) {
-            throw(102); // Voting ended
-        }
-        if (self.totalVotes >= MAX_VOTES) {
-            throw(103); // Max votes reached
-        }
-        if (self.voters.get(sender) != null) {
-            throw(104); // Already voted
-        }
+        let currentTime: Int = now();
+        require(currentTime < self.votingEndingAt, "Voting has ended");
         
-        // Check if we have enough TON for the vote
-        let ctx = context();
-        if (ctx.value < GAS_FOR_VOTE) {
-            throw(105); // Not enough TON for vote
-        }
+        require(self.yesCount + self.noCount < 100, "Maximum number of votes reached");
+
+        let voter: Address = sender();
+        require(self.voters.get(voter) == null, "Already voted");
         
-        // Record vote
-        self.voters.set(sender, true);
-        self.totalVotes += 1;
+        self.voters.set(voter, true);
         
-        // Set the appropriate counter to 1
         if (msg.value) {
-            self.yesCount += 1;
+            self.yesCount = (self.yesCount + 1);
         } else {
-            self.noCount += 1;
-        }
-        
-        // Refund excess
-        let refund = ctx.value - GAS_FOR_VOTE;
-        if (refund > 0) {
-            send(SendParameters{
-                to: sender,
-                value: refund,
-                mode: SendRemainingValue,
-                bounce: false
-            });
+            self.noCount = (self.noCount + 1);
         }
     }
 
