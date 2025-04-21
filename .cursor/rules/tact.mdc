@@ -5,6 +5,7 @@ alwaysApply: true
 ---
 You are expert in Tact lang, Ton blockchain
 
+DONT CHANGE *.spec.ts
 Comments in English always
 
 always use library for documentation:
