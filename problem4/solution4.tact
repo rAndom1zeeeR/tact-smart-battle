@@ -2,11 +2,9 @@
 /// @notice Initialization data structure for Proposal contract
 /// @param master Address of the ProposalMaster contract that deployed this proposal
 /// @param proposalId Unique identifier for this proposal
-/// @param votingEndingAt Unix timestamp when voting ends (optional)
 struct ProposalInit {
     master: Address;
     proposalId: Int as uint32;
-    votingEndingAt: Int as uint32;
 }
 
 /// @title DeployNewProposal
@@ -96,12 +94,10 @@ contract ProposalMaster {
         deploy(DeployParameters{
             init: initOf Proposal(ProposalInit{
                 master: master,
-                proposalId: id,
-                votingEndingAt: msg.votingEndingAt
+                proposalId: id
             }),
             value: GAS_FOR_DEPLOY,
-            bounce: true,
-            body: "Hello, World!".asComment() // Optional message body
+            bounce: true
         });
         
         self.nextProposalId = id + 1;
@@ -142,12 +138,8 @@ contract Proposal {
         self.master = init.master;
         self.proposalId = init.proposalId;
         
-        // Set voting end time or use default
-        if (init.votingEndingAt == 0) {
-            self.votingEndingAt = now() + DEFAULT_VOTING_PERIOD;
-        } else {
-            self.votingEndingAt = init.votingEndingAt;
-        }
+        // Set default voting end time
+        self.votingEndingAt = now() + DEFAULT_VOTING_PERIOD;
         
         self.yesCount = 0;
         self.noCount = 0;
@@ -183,6 +175,8 @@ contract Proposal {
         // Record vote
         self.voters.set(sender, true);
         self.totalVotes += 1;
+        
+        // Set the appropriate counter to 1
         if (msg.value) {
             self.yesCount += 1;
         } else {
