@@ -70,8 +70,6 @@ contract Proposal {
     master: Address;
     proposalId: Int as uint32;
     votingEndingAt: Int as uint32;
-    // Use a simple counter to track the number of votes
-    voteCount: Int as uint32;
     voters: map<Address, Bool>;
 
     init(data: ProposalInit) {
@@ -80,14 +78,22 @@ contract Proposal {
         self.noCount = 0;
         self.master = data.master;
         self.proposalId = data.proposalId;
-        self.votingEndingAt = 0; // Default value
-        self.voteCount = 0;
+        self.votingEndingAt = 0; // Will be set in the first message
         self.voters = emptyMap();
     }
 
     receive(msg: Slice) {
+        // Only allow the master to set the voting end time
+        if (sender() != self.master) {
+            throw(2025);
+        }
+        
         // Set the voting end time from the message
         self.votingEndingAt = msg.loadUint(32);
+        
+        // Verify the voting end time is in the future
+        let currentTime: Int = now();
+        require(currentTime < self.votingEndingAt, "Voting end time must be in the future");
     }
 
     receive(msg: Vote) {
@@ -96,7 +102,7 @@ contract Proposal {
         require(currentTime < self.votingEndingAt, "Voting has ended");
         
         // Check if we've reached the maximum number of votes
-        require(self.voteCount < 100, "Maximum number of votes reached");
+        require(self.yesCount + self.noCount < 100, "Maximum number of votes reached");
 
         // Check if voter has already voted
         let voter: Address = sender();
@@ -104,9 +110,6 @@ contract Proposal {
         
         // Record the vote
         self.voters.set(voter, true);
-        
-        // Increment the vote count
-        self.voteCount += 1;
         
         // Increment the appropriate counter
         if (msg.value) {
