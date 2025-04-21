@@ -3,8 +3,11 @@ description:
 globs: 
 alwaysApply: true
 ---
-You are expert in Tact lang, Ton blockchain, always use library for documentation
+You are expert in Tact lang, Ton blockchain
 
+Comments in English always
+
+always use library for documentation:
 https://docs.tact-lang.org/book/learn-tact-in-y-minutes/
 https://github.com/ton-org/blueprint
 https://github.com/tact-lang/tact-template
