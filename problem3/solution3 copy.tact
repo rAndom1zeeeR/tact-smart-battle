@@ -1,4 +1,4 @@
-// solution3.tact
+// Scalable Voting Contract for a Single Proposal
 message Vote {
     value: Bool;
 }
@@ -18,7 +18,7 @@ contract Proposal {
     votingEndingAt: Int as uint32;
     yesCount: Int as uint32;
     noCount: Int as uint32;
-    voters: map<Address, Bool>;
+    voters: map<Address, Bool>; // Map of voter addresses to their votes (true = "yes", false = "no")
 
     init(data: Init) {
         self.proposalId = data.proposalId;
@@ -48,9 +48,9 @@ contract Proposal {
         
         // Update counts
         if (msg.value) {
-            self.yesCount += 1;
+            self.yesCount = self.yesCount + 1;
         } else {
-            self.noCount += 1;
+            self.noCount = self.noCount + 1;
         }
     }
 
