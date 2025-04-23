@@ -1,79 +1,79 @@
 {
-  "projects": [
-    {
-      "name": "solution1",
-      "path": "./problem1/solution1.tact",
-      "output": "./output",
-      "mode": "full",
-      "options": {
-        "external": false,
-        "debug": false,
-        "ipfsAbiGetter": false,
-        "interfacesGetter": false,
-        "experimental": {
-          "inline": true
+    "projects": [
+        {
+            "name": "solution1",
+            "path": "./problem1/solution1.tact",
+            "output": "./output",
+            "mode": "full",
+            "options": {
+                "external": false,
+                "debug": false,
+                "ipfsAbiGetter": false,
+                "interfacesGetter": false,
+                "experimental": {
+                    "inline": true
+                }
+            }
+        },
+        {
+            "name": "solution2",
+            "path": "./problem2/solution2.tact",
+            "output": "./output",
+            "mode": "full",
+            "options": {
+                "external": false,
+                "debug": false,
+                "ipfsAbiGetter": false,
+                "interfacesGetter": false,
+                "experimental": {
+                    "inline": true
+                }
+            }
+        },
+        {
+            "name": "solution3",
+            "path": "./problem3/solution3.tact",
+            "output": "./output",
+            "mode": "full",
+            "options": {
+                "external": false,
+                "debug": false,
+                "ipfsAbiGetter": false,
+                "interfacesGetter": false,
+                "experimental": {
+                    "inline": true
+                }
+            }
+        },
+        {
+            "name": "solution4",
+            "path": "./problem4/solution4.tact",
+            "output": "./output",
+            "mode": "full",
+            "options": {
+                "external": true,
+                "debug": true,
+                "ipfsAbiGetter": true,
+                "interfacesGetter": true,
+                "experimental": {
+                    "inline": true
+                }
+            }
+        },
+        {
+            "name": "solution5",
+            "path": "./problem5/solution5.tact",
+            "output": "./output",
+            "mode": "full",
+            "options": {
+                "external": false,
+                "debug": false,
+                "ipfsAbiGetter": false,
+                "interfacesGetter": false,
+                "experimental": {
+                    "inline": true
+                }
+            }
         }
-      }
-    },
-    {
-      "name": "solution2",
-      "path": "./problem2/solution2.tact",
-      "output": "./output",
-      "mode": "full",
-      "options": {
-        "external": false,
-        "debug": false,
-        "ipfsAbiGetter": false,
-        "interfacesGetter": false,
-        "experimental": {
-          "inline": true
-        }
-      }
-    },
-    {
-      "name": "solution3",
-      "path": "./problem3/solution3.tact",
-      "output": "./output",
-      "mode": "full",
-      "options": {
-        "external": false,
-        "debug": false,
-        "ipfsAbiGetter": false,
-        "interfacesGetter": false,
-        "experimental": {
-          "inline": true
-        }
-      }
-    },
-    {
-      "name": "solution4",
-      "path": "./problem4/solution4.tact",
-      "output": "./output",
-      "mode": "full",
-      "options": {
-        "external": false,
-        "debug": false,
-        "ipfsAbiGetter": false,
-        "interfacesGetter": false,
-        "experimental": {
-          "inline": true
-        }
-      }
-    },
-    {
-      "name": "solution5",
-      "path": "./problem5/solution5.tact",
-      "output": "./output",
-      "mode": "full",
-      "options": {
-        "external": false,
-        "debug": false,
-        "ipfsAbiGetter": false,
-        "interfacesGetter": false,
-        "experimental": {
-          "inline": true
-        }
-      }
-    }
-  ]
+    ]
 }
