@@ -39,7 +39,7 @@ contract ProposalMaster with Deployable {
         if (myBalance() >= ton("0.01")) {
             send(SendParameters{
                 to: sender(),
-                value: myBalance() - ton("0.012"),
+                value: myBalance() - ton("0.011"),
                 mode: SendIgnoreErrors,
                 bounce: true
             });
