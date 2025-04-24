@@ -62,7 +62,7 @@ message Vote { value: Bool }
 
 The `value` field of a `Vote` message means "yes" if it is `true`, or "no" otherwise.
 
-#### 2.4 Retrieving voting data from your contract 
+#### 2.4 Retrieving voting data from your contract
 
 Your contract needs to have a getter named `proposalState` to retrieve the current voting results with the following signature:
 
@@ -87,7 +87,7 @@ You can find the contract interfaces described above in [solution5.tact](./solut
 
 For a deeper understanding of how your contract will be tested and to ensure full compatibility, please refer to the public interface compatibility test: [public5.spec.ts](./public5.spec.ts).
 
-Use the following command to execute the automated tests specifically for Level 5: 
+Use the following command to execute the automated tests specifically for Level 5:
 
 ```shell
 npm run test5

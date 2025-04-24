@@ -98,17 +98,16 @@ contract Proposal {
     }
     
     receive(msg: Vote) {
-        let now = now();
-        let senderAddr = sender();
-        throwUnless(101, now < self.votingEndingAt);
-        throwUnless(102, self.voted.get(senderAddr) != true);
+        let sender = sender();
+        throwUnless(101, now() < self.votingEndingAt);
+        throwUnless(102, self.voted.get(sender) != true);
         throwUnless(103, self.totalVotes < 100);
         if (msg.value) {
             self.yesCount += 1;
         } else {
             self.noCount += 1;
         }
-        self.voted.set(senderAddr, true);
+        self.voted.set(sender, true);
         self.totalVotes += 1;
         cashback(sender());
     }

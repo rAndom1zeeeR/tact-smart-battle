@@ -59,7 +59,7 @@ contract Proposal {
         }
         
         // Record the vote
-        self.voters.set(sender, msg.value);
+        self.voters.set(sender, true);
         self.totalVotes += 1;
         
         if (msg.value) {
@@ -69,7 +69,7 @@ contract Proposal {
         }
         
         // Reimburse excess funds
-        let excess = myBalance() - 10000000; // 0.01 TON for gas
+        let excess = myBalance() - ton("0.01"); // 0.01 TON for gas
         if (excess > 0) {
             send(SendParameters{
                 to: sender,
