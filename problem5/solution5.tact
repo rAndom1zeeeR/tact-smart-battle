@@ -37,11 +37,12 @@ contract Proposal {
     receive() { }
 
     receive(msg: Vote) {
+        throwUnless(704, context().value >= 100_000_000);
         throwUnless(700, now() < self.votingEndingAt);
         let sender = sender();
         throwUnless(701, self.voters.get(sender) == null);
         let fwdFee: Int = getForwardFee(1, 256 + 1, false);
-        throwUnless(702, myBalance() >= fwdFee + ton("0.01"));
+        throwUnless(702, context().value >= fwdFee);
         let totalVoters = self.yesCount + self.noCount;
         throwUnless(703, totalVoters < 50);
         self.voters.set(sender, true);
