@@ -66,9 +66,9 @@ contract Proposal {
         
         // Увеличиваем счетчики после успешной записи голоса
         if (msg.value) {
-            self.yesCount = self.yesCount + 1;
+            self.yesCount += 1;
         } else {
-            self.noCount = self.noCount + 1;
+            self.noCount += 1;
         }
         
         // Reimburse excess funds
