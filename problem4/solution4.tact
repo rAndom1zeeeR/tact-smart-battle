@@ -73,10 +73,6 @@ contract ProposalMaster with Deployable {
     get fun nextProposalId(): Int {
         return self.proposalId;
     }
-
-    get fun balance(): String {
-        return myBalance().toCoinsString();
-    }
 }
 
 // Proposal contract
@@ -90,13 +86,13 @@ contract Proposal {
     master: Address;
     
     init(data: ProposalInit) {
-        throwIf(2025, sender() != data.master);
+        throwUnless(2025, sender() == data.master);
         self.proposalId = data.proposalId;
         self.master = data.master;
     }
 
     receive(msg: DeployNewProposalWithCashBack) {
-        throwIf(2025, sender() != self.master);
+        throwUnless(2025, sender() == self.master);
         self.votingEndingAt = msg.votingEndingAt;
         cashback(msg.sender)
     }
@@ -104,9 +100,9 @@ contract Proposal {
     receive(msg: Vote) {
         let now = now();
         let senderAddr = sender();
-        throwIf(101, now >= self.votingEndingAt);
-        throwIf(102, self.voted.get(senderAddr) == true);
-        throwIf(103, self.totalVotes >= 100);
+        throwUnless(101, now < self.votingEndingAt);
+        throwUnless(102, self.voted.get(senderAddr) != true);
+        throwUnless(103, self.totalVotes < 100);
         if (msg.value) {
             self.yesCount += 1;
         } else {
