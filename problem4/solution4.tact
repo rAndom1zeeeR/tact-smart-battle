@@ -1,87 +1,129 @@
-//
-// Contract for voting "yes" or "no" on a proposal
-//
+import "@stdlib/deploy";
+
+// Messages
+message DeployNewProposal {
+    votingEndingAt: Int as uint32;
+}
+
+message DeployNewProposalWithCashBack {
+    votingEndingAt: Int as uint32;
+    sender: Address;
+}
 
 message Vote {
     value: Bool;
 }
 
+// Structs
+struct ProposalInit {
+    master: Address;
+    proposalId: Int as uint32;
+}
+
 struct ProposalState {
     yesCount: Int as uint32;
     noCount: Int as uint32;
-}
-
-struct Init {
+    master: Address;
     proposalId: Int as uint32;
     votingEndingAt: Int as uint32;
 }
 
-contract Proposal {
-    // Set storage reserve to 0.0125 TON (100,000 bits)
-    override const storageReserve: Int = ton("0.0125");
+// ProposalMaster contract
+contract ProposalMaster with Deployable {
+    proposalId: Int = 0;
     
-    // State variables
-    proposalId: Int as uint32;
-    votingEndingAt: Int as uint32;
-    yesCount: Int as uint32;
-    noCount: Int as uint32;
-    // Store address hashes to save space
-    voters: map<Int as uint256, Bool>; // Map of address hashes to their votes (true = "yes", false = "no")
+    receive() {
+        if(context().value < ton("0.01")) {
+            return;
+        }
+        if (myBalance() >= ton("0.01")) {
+            send(SendParameters{
+                to: sender(),
+                value: myBalance() - ton("0.012"),
+                mode: SendIgnoreErrors,
+                bounce: true
+            });
+        }
+    }
     
-    // Contract initialization
-    init(data: Init) {
-        self.proposalId = data.proposalId;
-        self.votingEndingAt = data.votingEndingAt;
-        self.yesCount = 0;
-        self.noCount = 0;
-        self.voters = emptyMap();
+    receive(msg: DeployNewProposal) {
+        if(msg.votingEndingAt <= now()) { 
+            throw(104);
+        }
+        let proposalInit: ProposalInit = ProposalInit{
+            master: myAddress(),
+            proposalId: self.proposalId
+        };
+        let init: StateInit = initOf Proposal(proposalInit);
+        send(SendParameters{
+            to: contractAddress(init),
+            value: 0,
+            mode: SendRemainingValue,
+            code: init.code,
+            data: init.data,
+            body: DeployNewProposalWithCashBack{
+                votingEndingAt: msg.votingEndingAt,
+                sender: sender()
+            }.toCell(),
+        });
+        self.proposalId += 1;
+        cashback(sender());
+    }
+    
+    get fun nextProposalId(): Int {
+        return self.proposalId;
     }
 
-    // Empty handler for deployment
-    receive() { }
+    get fun balance(): String {
+        return myBalance().toCoinsString();
+    }
+}
 
-    // Message handler for voting
+// Proposal contract
+contract Proposal {
+    proposalId: Int as uint32;
+    votingEndingAt: Int as uint32 = 0;
+    yesCount: Int as uint32 = 0;
+    noCount: Int as uint32 = 0;
+    totalVotes: Int as uint32 = 0;
+    voted: map<Address, Bool>;
+    master: Address;
+    
+    init(data: ProposalInit) {
+        throwIf(2025, sender() != data.master);
+        self.proposalId = data.proposalId;
+        self.master = data.master;
+    }
+
+    receive(msg: DeployNewProposalWithCashBack) {
+        throwIf(2025, sender() != self.master);
+        self.votingEndingAt = msg.votingEndingAt;
+        cashback(msg.sender)
+    }
+    
     receive(msg: Vote) {
-        // Check if voting is still open
-        require(now() < self.votingEndingAt, "Voting has ended");
-        // Get sender address and compute its hash
-        let sender = sender();
-        let senderSlice = sender.asSlice();
-        let senderHash = senderSlice.hash();
-        // Check if voter has already voted
-        require(self.voters.get(senderHash) == null, "Already voted");
-        // Check message size and calculate fee
-        let fwdFee: Int = getForwardFee(1, 256 + 1, false); // 256 bits for hash + 1 bit for bool
-        require(myBalance() >= fwdFee + ton("0.01"), "Insufficient balance for message");
-        // Check if the maximum number of votes has been reached
-        let totalVotes = self.yesCount + self.noCount;
-        require(totalVotes < 50, "Maximum number of votes reached");
-        // Record the vote and increment counters only if the record was successful
-        self.voters.set(senderHash, msg.value);
-        // Increment counters after successful vote recording
+        let now = now();
+        let senderAddr = sender();
+        throwIf(101, now >= self.votingEndingAt);
+        throwIf(102, self.voted.get(senderAddr) == true);
+        throwIf(103, self.totalVotes >= 100);
         if (msg.value) {
             self.yesCount += 1;
         } else {
             self.noCount += 1;
         }
-        
-        // Reimburse excess funds
-        let excess = myBalance() - ton("0.01"); // 0.01 TON for gas
-        if (excess > 0) {
-            send(SendParameters{
-                to: sender,
-                value: excess,
-                bounce: false,
-                body: emptyCell()
-            });
-        }
+        self.voted.set(senderAddr, true);
+        self.totalVotes += 1;
+        cashback(sender());
     }
-
-    // Getter for retrieving voting results
+    
     get fun proposalState(): ProposalState {
-        return ProposalState{
+        return ProposalState {
             yesCount: self.yesCount,
-            noCount: self.noCount
+            noCount: self.noCount,
+            master: self.master,
+            proposalId: self.proposalId,
+            votingEndingAt: self.votingEndingAt
         };
     }
 }
