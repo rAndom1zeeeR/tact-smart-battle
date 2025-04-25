@@ -8,22 +8,16 @@ message DeployNewProposal {
 }
 
 contract ProposalMaster {
-    // State variable to track the next proposal ID
     nextProposalId: Int as uint32;
     
-    // Initialize the contract
     init() {
-        // Initialize nextProposalId to 0
         self.nextProposalId = 0;
     }
     
-    // deploy
     receive() { }
 
     receive(msg: DeployNewProposal) {
-        // Check if the voting end time is in the future
-        let currentTime: Int = now();
-        require(currentTime < msg.votingEndingAt, "Voting end time must be in the future");
+        throwUnless(100, now() < msg.votingEndingAt);
         
         // Deploy a new Proposal contract
         let proposalInit: ProposalInit = ProposalInit{
@@ -64,54 +58,30 @@ struct ProposalState {
 }
 
 contract Proposal {
-    // State variables
-    yesCount: Int as uint32;
-    noCount: Int as uint32;
     master: Address;
     proposalId: Int as uint32;
-    votingEndingAt: Int as uint32;
+    votingEndingAt: Int as uint32 = 0;
+    yesCount: Int as uint32 = 0;
+    noCount: Int as uint32 = 0;
     voters: map<Address, Bool>;
 
     init(data: ProposalInit) {
-        // Initialize state variables
-        self.yesCount = 0;
-        self.noCount = 0;
         self.master = data.master;
         self.proposalId = data.proposalId;
-        self.votingEndingAt = 0; // Will be set in the first message
         self.voters = emptyMap();
     }
 
     receive(msg: Slice) {
-        // Only allow the master to set the voting end time
-        if (sender() != self.master) {
-            throw(2025);
-        }
-        
-        // Set the voting end time from the message
+        throwIf(2025, sender() != self.master);
         self.votingEndingAt = msg.loadUint(32);
-        
-        // Verify the voting end time is in the future
-        let currentTime: Int = now();
-        require(currentTime < self.votingEndingAt, "Voting end time must be in the future");
+        throwUnless(101, now() < self.votingEndingAt);
     }
 
     receive(msg: Vote) {
-        // Check if voting is still open
-        let currentTime: Int = now();
-        require(currentTime < self.votingEndingAt, "Voting has ended");
-        
-        // Check if we've reached the maximum number of votes
-        require(self.yesCount + self.noCount < 100, "Maximum number of votes reached");
-
-        // Check if voter has already voted
-        let voter: Address = sender();
-        require(self.voters.get(voter) == null, "Already voted");
-        
-        // Record the vote
-        self.voters.set(voter, true);
-        
-        // Increment the appropriate counter
+        throwUnless(102, now() < self.votingEndingAt);
+        throwUnless(103, self.yesCount + self.noCount < 100);
+        throwUnless(104, self.voters.get(sender()) == null);
+        self.voters.set(sender(), true);
         if (msg.value) {
             self.yesCount += 1;
         } else {
