@@ -21,15 +21,13 @@ contract Proposal {
     
     proposalId: Int as uint32;
     votingEndingAt: Int as uint32;
-    yesCount: Int as uint32;
-    noCount: Int as uint32;
+    yesCount: Int as uint32 = 0;
+    noCount: Int as uint32 = 0;
     voters: map<Address, Bool>;
 
     init(data: Init) {
         self.proposalId = data.proposalId;
         self.votingEndingAt = data.votingEndingAt;
-        self.yesCount = 0;
-        self.noCount = 0;
         self.voters = emptyMap();
     }
 
@@ -37,23 +35,19 @@ contract Proposal {
     receive() { }
 
     receive(msg: Vote) {
-        throwUnless(704, context().value >= 100_000_000);
-        throwUnless(700, now() < self.votingEndingAt);
-        let sender = sender();
-        throwUnless(701, self.voters.get(sender) == null);
-        let fwdFee: Int = getForwardFee(1, 256 + 1, false);
-        throwUnless(702, context().value >= fwdFee);
-        let totalVoters = self.yesCount + self.noCount;
-        throwUnless(703, totalVoters < 50);
-        self.voters.set(sender, true);
+        throwUnless(700, context().value >= 100_000_000);
+        throwUnless(701, now() < self.votingEndingAt);
+        throwUnless(702, self.voters.get(sender()) == null);
+        throwUnless(703, context().value >= getForwardFee(1, 256 + 1, false));
+        throwUnless(704, self.yesCount + self.noCount < 50);
         if (msg.value) {
             self.yesCount += 1;
         } else {
             self.noCount += 1;
         }
-        
+        self.voters.set(sender(), true);
         send(SendParameters{
-            to: sender,
+            to: sender(),
             value: 0,
             mode: SendRemainingValue,
             body: emptyCell()
