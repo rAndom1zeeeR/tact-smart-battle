@@ -81,7 +81,6 @@ contract Proposal {
     votingEndingAt: Int as uint32 = 0;
     yesCount: Int as uint32 = 0;
     noCount: Int as uint32 = 0;
-    totalVotes: Int as uint32 = 0;
     voted: map<Address, Bool>;
     master: Address;
     
@@ -101,14 +100,13 @@ contract Proposal {
         let sender = sender();
         throwUnless(101, now() < self.votingEndingAt);
         throwUnless(102, self.voted.get(sender) != true);
-        throwUnless(103, self.totalVotes < 100);
+        throwUnless(103, self.yesCount + self.noCount < 100);
         if (msg.value) {
             self.yesCount += 1;
         } else {
             self.noCount += 1;
         }
         self.voted.set(sender, true);
-        self.totalVotes += 1;
         cashback(sender());
     }
     

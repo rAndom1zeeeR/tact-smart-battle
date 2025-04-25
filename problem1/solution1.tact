@@ -22,7 +22,6 @@ contract Proposal {
     yesCount: Int as uint32;
     noCount: Int as uint32;
     voters: map<Address, Bool>;
-    totalVotes: Int as uint32;
     
     init(data: Init) {
         self.proposalId = data.proposalId;
@@ -30,17 +29,14 @@ contract Proposal {
         self.yesCount = 0;
         self.noCount = 0;
         self.voters = emptyMap();
-        self.totalVotes = 0;
     }
 
-    // Empty handler for deployment
     receive() { }
 
-    // Message handler for voting
     receive(msg: Vote) {
         throwUnless(100, now() < self.votingEndingAt);
-        throwUnless(101, self.totalVotes < 100);
-        throwUnless(702, self.voters.get(sender()) == null);
+        throwUnless(101, self.voters.get(sender()) == null);
+        throwUnless(102, self.yesCount + self.noCount < 100);
         
         if (msg.value) {
             self.yesCount += 1;
@@ -48,18 +44,11 @@ contract Proposal {
             self.noCount += 1;
         }
         
-        self.voters.set(sender(), true);
-        self.totalVotes += 1;
-        
+        self.voters.set(sender(), true);        
         // Reimburse excess funds
-        let excess = myBalance() - ton("0.01"); // 0.01 TON for gas
+        let excess = myBalance() - ton("0.01");
         if (excess > 0) {
-            send(SendParameters{
-                to: sender(),
-                value: excess,
-                bounce: false,
-                body: emptyCell()
-            });
+            cashback(sender());
         }
     }
 

@@ -79,8 +79,8 @@ contract Proposal {
 
     receive(msg: Vote) {
         throwUnless(102, now() < self.votingEndingAt);
-        throwUnless(103, self.yesCount + self.noCount < 100);
-        throwUnless(104, self.voters.get(sender()) == null);
+        throwUnless(103, self.voters.get(sender()) == null);
+        throwUnless(104, self.yesCount + self.noCount < 100);
         self.voters.set(sender(), true);
         if (msg.value) {
             self.yesCount += 1;
@@ -90,13 +90,12 @@ contract Proposal {
     }
 
     get fun proposalState(): ProposalState {
-        let state: ProposalState = ProposalState{
+        return ProposalState{
             yesCount: self.yesCount,
             noCount: self.noCount,
             master: self.master,
             proposalId: self.proposalId,
             votingEndingAt: self.votingEndingAt
         };
-        return state;
     }
 }

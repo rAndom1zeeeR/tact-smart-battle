@@ -27,15 +27,15 @@ contract Proposal {
         self.voters = emptyMap();
     }
 
-    receive() { }
+    receive() {}
 
     receive(msg: Vote) {
-        throwUnless(700, now() < self.votingEndingAt);
-        let sender = sender();
-        throwUnless(701, self.voters.get(sender) == null);
+        throwUnless(100, now() < self.votingEndingAt);
         let fwdFee: Int = getForwardFee(1, 256 + 1, false);
-        throwUnless(702, myBalance() >= fwdFee + ton("0.01"));
-        throwUnless(703, self.yesCount + self.noCount < 50);
+        throwUnless(101, myBalance() >= fwdFee + ton("0.01"));
+        let sender = sender();
+        throwUnless(102, self.voters.get(sender) == null);
+        throwUnless(103, self.yesCount + self.noCount < 50);
         self.voters.set(sender, true);
         if (msg.value) {
             self.yesCount += 1;
@@ -45,12 +45,7 @@ contract Proposal {
         
         let excess = myBalance() - ton("0.011");
         if (excess > 0) {
-            send(SendParameters{
-                to: sender,
-                value: excess,
-                bounce: true,
-                body: emptyCell()
-            });
+            cashback(sender());
         }
     }
 
