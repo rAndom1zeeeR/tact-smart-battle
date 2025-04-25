@@ -1,5 +1,5 @@
 //
-// Contract for voting "yes" or "no" on a proposal
+// Single-proposal Voting Contract
 //
 
 message Vote {
@@ -17,15 +17,13 @@ struct Init {
 }
 
 contract Proposal {
-    // State variables
     proposalId: Int as uint32;
     votingEndingAt: Int as uint32;
     yesCount: Int as uint32;
     noCount: Int as uint32;
-    voters: map<Address, Bool>; // Map of voter addresses to their votes (true = "yes", false = "no")
+    voters: map<Address, Bool>;
     totalVotes: Int as uint32;
     
-    // Contract initialization
     init(data: Init) {
         self.proposalId = data.proposalId;
         self.votingEndingAt = data.votingEndingAt;
@@ -40,27 +38,9 @@ contract Proposal {
 
     // Message handler for voting
     receive(msg: Vote) {
-        // Check if voting is still open
-        let now = now();
-        if (now >= self.votingEndingAt) {
-            throw(100); // Voting has ended
-        }
-        
-        // Check if vote limit has been reached
-        if (self.totalVotes >= 100) {
-            throw(101); // Maximum votes reached
-        }
-        
-        // Check if voter has already voted
-        let sender = sender();
-        // Check for key presence in the map using get and null check
-        if (self.voters.get(sender) != null) {
-            throw(102); // Voter has already voted
-        }
-        
-        // Record the vote
-        self.voters.set(sender, true);
-        self.totalVotes += 1;
+        throwUnless(100, now() < self.votingEndingAt);
+        throwUnless(101, self.totalVotes < 100);
+        throwUnless(702, self.voters.get(sender()) == null);
         
         if (msg.value) {
             self.yesCount += 1;
@@ -68,11 +48,14 @@ contract Proposal {
             self.noCount += 1;
         }
         
+        self.voters.set(sender(), true);
+        self.totalVotes += 1;
+        
         // Reimburse excess funds
         let excess = myBalance() - ton("0.01"); // 0.01 TON for gas
         if (excess > 0) {
             send(SendParameters{
-                to: sender,
+                to: sender(),
                 value: excess,
                 bounce: false,
                 body: emptyCell()
