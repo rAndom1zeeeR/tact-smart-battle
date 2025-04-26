@@ -1,3 +1,5 @@
+// Master Contract for Multiple Voting Proposals
+
 struct ProposalInit {
     master: Address;
     proposalId: Int as uint32;
@@ -8,13 +10,9 @@ message DeployNewProposal {
 }
 
 contract ProposalMaster {
-    nextProposalId: Int as uint32;
+    nextProposalId: Int as uint32 = 0;
     
-    init() {
-        self.nextProposalId = 0;
-    }
-    
-    receive() { }
+    receive() {}
 
     receive(msg: DeployNewProposal) {
         throwUnless(100, now() < msg.votingEndingAt);
