@@ -31,7 +31,7 @@ contract Proposal {
 
     receive(msg: Vote) {
         throwUnless(100, now() < self.votingEndingAt);
-        throwUnless(101, myBalance() >= getForwardFee(1, 256 + 1, false) + ton("0.01"));
+        throwUnless(101, myBalance() >= getForwardFee(1, 256 + 1, true) + ton("0.01"));
         throwUnless(102, self.voters.get(sender()) == null);
         throwUnless(103, self.yesCount + self.noCount < 50);
         self.voters.set(sender(), true);
