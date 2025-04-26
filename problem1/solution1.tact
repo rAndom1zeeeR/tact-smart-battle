@@ -1,6 +1,4 @@
-//
 // Single-proposal Voting Contract
-//
 
 message Vote {
     value: Bool;
@@ -19,15 +17,13 @@ struct Init {
 contract Proposal {
     proposalId: Int as uint32;
     votingEndingAt: Int as uint32;
-    yesCount: Int as uint32;
-    noCount: Int as uint32;
+    yesCount: Int as uint32 = 0;
+    noCount: Int as uint32 = 0;
     voters: map<Address, Bool>;
     
     init(data: Init) {
         self.proposalId = data.proposalId;
         self.votingEndingAt = data.votingEndingAt;
-        self.yesCount = 0;
-        self.noCount = 0;
         self.voters = emptyMap();
     }
 
@@ -44,15 +40,12 @@ contract Proposal {
             self.noCount += 1;
         }
         
-        self.voters.set(sender(), true);        
-        // Reimburse excess funds
-        let excess = myBalance() - ton("0.01");
-        if (excess > 0) {
+        self.voters.set(sender(), true);
+        if (myBalance() - ton("0.01") > 0) {
             cashback(sender());
         }
     }
 
-    // Getter for retrieving voting results
     get fun proposalState(): ProposalState {
         return ProposalState{
             yesCount: self.yesCount,
