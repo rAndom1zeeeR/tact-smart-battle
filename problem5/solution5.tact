@@ -1,6 +1,4 @@
-//
 // Scalable single-proposal Voting Contract + Refunds and gas management
-//
 
 message Vote {
     value: Bool;
@@ -31,23 +29,21 @@ contract Proposal {
         self.voters = emptyMap();
     }
 
-    // deploy
-    receive() { }
+    receive() {}
 
     receive(msg: Vote) {
         throwUnless(700, context().value >= 100_000_000);
         throwUnless(701, context().value >= getForwardFee(1, 256 + 1, false));
-        let sender = sender();
         throwUnless(702, now() < self.votingEndingAt);
-        throwUnless(703, self.voters.get(sender) == null);
+        throwUnless(703, self.voters.get(sender()) == null);
         throwUnless(704, self.yesCount + self.noCount < 50);
-        self.voters.set(sender, true);
         if (msg.value) {
             self.yesCount += 1;
         } else {
             self.noCount += 1;
         }
-        cashback(sender);
+        self.voters.set(sender(), true);
+        cashback(sender());
     }
 
     get fun proposalState(): ProposalState {
