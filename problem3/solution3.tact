@@ -19,21 +19,20 @@ contract Proposal {
     votingEndingAt: Int as uint32;
     yesCount: Int as uint32 = 0;
     noCount: Int as uint32 = 0;
-    voters: map<Address, Bool>;
+    voters: map<Address, Bool> = emptyMap();
     
     init(data: Init) {
         self.proposalId = data.proposalId;
         self.votingEndingAt = data.votingEndingAt;
-        self.voters = emptyMap();
     }
 
     receive() {}
 
     receive(msg: Vote) {
-        throwUnless(100, now() < self.votingEndingAt);
-        throwUnless(101, myBalance() >= getForwardFee(1, 256 + 1, true) + ton("0.01"));
-        throwUnless(102, self.voters.get(sender()) == null);
-        throwUnless(103, self.yesCount + self.noCount < 50);
+        throwUnless(100, myBalance() >= getForwardFee(1, 256 + 1, true));
+        throwUnless(101, self.voters.get(sender()) == null);
+        throwUnless(102, now() < self.votingEndingAt);
+        throwUnless(103, self.yesCount + self.noCount < 10);
         self.voters.set(sender(), true);
         if (msg.value) {
             self.yesCount += 1;
@@ -41,8 +40,7 @@ contract Proposal {
             self.noCount += 1;
         }
         
-        let excess = myBalance() - ton("0.011");
-        if (excess > 0) {
+        if (myBalance() > 0) {
             cashback(sender());
         }
     }
